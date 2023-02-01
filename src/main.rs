@@ -1,4 +1,6 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::fs::{self};
+use std::ops::Deref;
 use std::rc::Rc;
 
 fn read_input_from_file() -> Result<String, std::io::Error> {
@@ -56,7 +58,7 @@ fn parse_maze(input: &str) -> Vec<Vec<Field>> {
     maze
 }
 
-fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_path: Rc<Vec<([i8; 2], i32)>>) {
+fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_path: Rc<Vec<([i8; 2], i32)>>,position: [usize; 2], was_through_door: bool) {
     //make vector of vectors of u16 all set to 0 same dimensions as maze
     // if (row, col) == (0, 0) {
     //     solved_maze = vec![vec![0; maze[0].len()]; maze.len()];
@@ -67,101 +69,81 @@ fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_pa
     
     //let mut best = best_path.lock().unwrap();
     if path.len() + 1 > best_path.len() && best_path.len() > 1 {    //prekoracio je vec dozvoljenu duzinu puta
+        print!("Prekoracio je vec dozvoljenu duzinu puta");
         return 
     }
 
-    let row = path.last().unwrap().0[0] as usize;
-    let col = path.last().unwrap().0[1] as usize;
+    let row = position[0];
+    let col = position[1];
     let field = maze[row][col];
     // println!("{:?}", path);
     // println!("{:?}", field);
     if field.end == 1 {  //it came to an end
             path.push((field.position.clone(), path.last().unwrap().1));
-            // *best = path;
             best_path = Rc::new(path);
-            // println!("alooooooooooooooo");
+            println!("{:?}", best_path);
             return 
     }
        
-    let mut keys = if field.key == 1 && path.iter().filter(|x| x.0 == field.position).count() == 1 {
+    let mut keys = if field.key == 1 && path.iter().find(|x| x.0 == field.position).is_none() {
         path.last_mut().unwrap().1 + 1
     } else {
         path.last_mut().unwrap().1  
     };
 
-    // if was_throw_door {
-    //     keys -= 1;
-    // }
+    if was_through_door {
+        keys -= 1;
+    }
 
-    // if !path.contains(&(field.position, keys)) {         // da li sam vec bio tu
-    //     path.push((field.position.clone(), keys.clone()));
-    //     println!("Usao si u if za proveru da li si vec bio tu")
-    // } else if path.len() == 1 {
-    //     println!("Usao si u if za proveru da li si tek poceo")
-    // } else {
-    //     return 
-    // } 
-
-    if field.move_[0] == 1 { //west
-        if field.door[0] == 1 {
+    if !path.contains(&(field.position, keys)) {         // da li sam vec bio tu
+        path.push((field.position.clone(), keys.clone()));
+        // println!("Usao si u if za proveru da li si vec bio tu")
+    } else if path.len() == 1 {
+        // println!("Usao si u if za proveru da li si tek poceo")
+    } else {
+        return 
+    } 
+    if field.move_[3] == 1 { //south
+        if field.door[3] == 1 {
             if keys > 0 {
-                keys -= 1;
-                if add_to_path(&mut path, row, col - 1, keys) {
-                    traverse_maze(maze.clone(), path.clone(), best_path.clone());
-                }
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row + 1, col], true);
             }
         }
         else{
-            if add_to_path(&mut path, row, col - 1, keys) {
-                traverse_maze(maze.clone(), path.clone(), best_path.clone());
-            }
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row + 1, col], false);
         }
     }
     if field.move_[1] == 1 { //east
         if field.door[1] == 1 {
             if keys > 0 {
-                keys -= 1;
-                if add_to_path(&mut path, row, col + 1, keys){
-                    traverse_maze(maze.clone(), path.clone(), best_path.clone());
-                }
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col + 1], true);
             }
         }
         else{
-            if add_to_path(&mut path, row, col + 1, keys){
-                traverse_maze(maze.clone(), path.clone(), best_path.clone());
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col + 1], false);
+        }
+    }
+    if field.move_[0] == 1 { //west
+        if field.door[0] == 1 {
+            if keys > 0 {
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col -1], true);
             }
+        }
+        else{
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row,col - 1], false);
         }
     }
     if field.move_[2] == 1 { //north
         if field.door[2] == 1 {
             if keys > 0 {
-                keys -= 1;
-                if add_to_path(&mut path, row - 1, col, keys){
-                    traverse_maze(maze.clone(), path.clone(), best_path.clone());
-                }
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row - 1, col], true);
             }
         }
         else{
-            if add_to_path(&mut path, row - 1, col, keys){
-                traverse_maze(maze.clone(), path.clone(),best_path.clone());
-            }
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row - 1, col], false);
         }
     }
-    if field.move_[3] == 1 { //south
-        if field.door[3] == 1 {
-            if keys > 0 {
-                keys -= 1;
-                if add_to_path(&mut path, row + 1, col, keys){
-                    traverse_maze(maze.clone(), path.clone(), best_path.clone());
-                }
-            }
-        }
-        else{
-            if add_to_path(&mut path, row + 1, col, keys){
-                traverse_maze(maze.clone(), path.clone(), best_path.clone());
-            }
-        }
-    }
+
 }    
 
 fn add_to_path(path: &mut Vec<([i8; 2], i32)>, row: usize, col: usize, keys: i32) -> bool {
@@ -179,8 +161,8 @@ fn add_to_path(path: &mut Vec<([i8; 2], i32)>, row: usize, col: usize, keys: i32
 fn main() {
     let input = read_input_from_file().unwrap();
     let maze = parse_maze(&input);
-    let  best_path = Rc::new(vec![]);
-    traverse_maze(maze.clone(), vec![([0, 0], 0)], best_path.clone());
+    let  best_path = Rc::new(Vec::new());
+    traverse_maze(maze.clone(), vec![([0, 0], 0)], best_path.clone(), [0, 0], false);
     println!("Best path: {:?}", best_path);
     for i in 0..6 {
         for j in 0..9 {
