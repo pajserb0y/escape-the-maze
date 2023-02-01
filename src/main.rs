@@ -12,29 +12,29 @@ fn read_input_from_file() -> Result<String, std::io::Error> {
 #[derive(Debug, Clone, Copy, Default)]
 struct Field {
     position: [i8; 2],
-    move_: [u16; 4],
-    door: [u16; 4],
-    key: u16,
-    end: u16,
+    move_: [u32; 4],
+    door: [u32; 4],
+    key: u32,
+    end: u32,
 }
 
 impl Field {
-    fn new(bits: u16) -> Field {
+    fn new(line: String) -> Field {
         let position = [0, 0];
         let move_ = [
-            (bits & 0b1000_0000_0000) >> 12, //west
-            (bits & 0b0100_0000_0000) >> 11, //east
-            (bits & 0b0010_0000_0000) >> 10, //north
-            (bits & 0b0001_0000_0000) >> 9,  //south
+            line.chars().nth(0).unwrap().to_digit(10).unwrap(),  //convert to int
+            line.chars().nth(1).unwrap().to_digit(10).unwrap(), //east
+            line.chars().nth(2).unwrap().to_digit(10).unwrap(), //north
+            line.chars().nth(3).unwrap().to_digit(10).unwrap(),  //south
         ];
         let door = [
-            (bits & 0b0000_1000_0000) >> 8, //door west
-            (bits & 0b0000_0100_0000) >> 7, //door east
-            (bits & 0b0000_0010_0000) >> 6, //door north
-            (bits & 0b0000_0001_0000) >> 5, //door south
+            line.chars().nth(4).unwrap().to_digit(10).unwrap(), //door west
+            line.chars().nth(5).unwrap().to_digit(10).unwrap(), //door east
+            line.chars().nth(6).unwrap().to_digit(10).unwrap(), //door north
+            line.chars().nth(7).unwrap().to_digit(10).unwrap(), //door south
         ];
-        let key = (bits & 0b0000_0000_0100) >> 2;
-        let end = bits & 0b0000_0000_0001;
+        let key = line.chars().nth(8).unwrap().to_digit(10).unwrap();
+        let end = line.chars().nth(10).unwrap().to_digit(10).unwrap();
 
         Field { position, move_, door, key, end }
     }
@@ -43,10 +43,9 @@ impl Field {
 fn parse_maze(input: &str) -> Vec<Vec<Field>> {
     let  fields = input
     .lines()
-    .map(|line| u16::from_str_radix(line.replace(" ", "").trim(),2).unwrap())
+    .map(|line| line.replace(" ", "").trim().to_owned())
     .map(Field::new)
     .collect::<Vec<_>>();
-
     let mut maze = Vec::new();
     let mut row = Vec::new();
     for (i, mut field) in fields.into_iter().enumerate() {
@@ -69,7 +68,6 @@ fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_pa
     //write recursive function that goes trought maze and sets solved_maze to 1 while moving trough maze considering move dor and key values
     //return  
     
-    
     //let mut best = best_path.lock().unwrap();
     if path.len() + 1 > best_path.len() && best_path.len() > 1 {    //prekoracio je vec dozvoljenu duzinu puta
         return 
@@ -82,6 +80,7 @@ fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_pa
             path.push((field.position.clone(), path.last().unwrap().1));
             // *best = path;
             best_path = Rc::new(path);
+            println!("{:?}", best_path);
             return 
     }
        
@@ -94,7 +93,6 @@ fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_pa
     // if was_throw_door {
     //     keys -= 1;
     // }
-
 
     if !path.contains(&(field.position, keys)) {         // da li sam vec bio tu
         path.push((field.position, keys));
@@ -166,6 +164,7 @@ fn main() {
     let maze = parse_maze(&input);
     let  best_path = Rc::new(vec![]);
     traverse_maze(maze.clone(), vec![([0, 0], 0)], best_path.clone());
+    println!("Best path: {:?}", best_path);
     for i in 0..6 {
         for j in 0..9 {
             if best_path.iter().find(|(pos, _)| pos[0] == i && pos[1] == j).is_some() {
