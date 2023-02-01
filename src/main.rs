@@ -1,8 +1,6 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::fs::{self};
-use std::ops::Deref;
-use std::rc::Rc;
 use std::sync::{Mutex, Arc};
+use std::thread;
 
 fn read_input_from_file() -> Result<String, std::io::Error> {
     let input = fs::read_to_string("input.txt").expect("Error reading file");
@@ -117,48 +115,82 @@ fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_pa
         return 
     } 
 
-
     if field.move_[3] == 1 { //south
-        if field.door[3] == 1 {
-            if keys > 0 {
-                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row + 1, col], true);
+        let field = field;
+        let keys = keys;
+        let maze = maze.clone();
+        let path = path.clone();
+        let best_path = best_path.clone();
+        let traverse = move || {
+            if field.door[3] == 1 {
+                if keys > 0 {
+                    traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row + 1, col], true);
+                }
             }
-        }
-        else{
+            else{
                 traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row + 1, col], false);
-        }
-    }
-    if field.move_[1] == 1 { //east
-        if field.door[1] == 1 {
-            if keys > 0 {
-                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col + 1], true);
             }
-        }
-        else{
-                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col + 1], false);
-        }
-    }
-    if field.move_[0] == 1 { //west
-        if field.door[0] == 1 {
-            if keys > 0 {
-                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col -1], true);
-            }
-        }
-        else{
-                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row,col - 1], false);
-        }
+        };
+        let handle = thread::spawn(traverse);
+        handle.join().unwrap();
     }
     if field.move_[2] == 1 { //north
-        if field.door[2] == 1 {
-            if keys > 0 {
-                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row - 1, col], true);
+        let field = field;
+        let keys = keys;
+        let maze = maze.clone();
+        let path = path.clone();
+        let best_path = best_path.clone();
+        let traverse = move || {
+            if field.door[2] == 1 {
+                if keys > 0 {
+                    traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row - 1, col], true);
+                }
             }
-        }
-        else{
+            else{
                 traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row - 1, col], false);
-        }
+            }
+        };
+        let handle = thread::spawn(traverse);
+        handle.join().unwrap();
     }
-
+    if field.move_[1] == 1 { //east
+        let field = field;
+        let keys = keys;
+        let maze = maze.clone();
+        let path = path.clone();
+        let best_path = best_path.clone();
+        let traverse = move || {
+            if field.door[1] == 1 {
+                if keys > 0 {
+                    traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col + 1], true);
+                }
+            }
+            else{
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col + 1], false);
+            }
+        };
+        let handle = thread::spawn(traverse);
+        handle.join().unwrap();
+    }
+    if field.move_[0] == 1 { //west
+        let field = field;
+        let keys = keys;
+        let maze = maze.clone();
+        let path = path.clone();
+        let best_path = best_path.clone();
+        let traverse = move || {
+            if field.door[0] == 1 {
+                if keys > 0 {
+                    traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col - 1], true);
+                }
+            }
+            else{
+                traverse_maze(maze.clone(), path.clone(), best_path.clone(),[row, col - 1], false);
+            }
+        };
+        let handle = thread::spawn(traverse);
+        handle.join().unwrap();
+    }
 }    
 
 
