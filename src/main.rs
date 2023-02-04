@@ -79,8 +79,7 @@ fn parse_maze(input: &str) -> Vec<Vec<Field>> {
 fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_path: Arc<Mutex<Vec<([i8; 2], i32)>>>,position: [usize; 2], was_through_door: bool) {
 
     let mut best = best_path.lock().unwrap();
-    if path.len() + 1 > best.len() && best.len() > 1 {    //prekoracio je vec dozvoljenu duzinu puta
-        // print!("Prekoracio je vec dozvoljenu duzinu puta");
+    if path.len() + 1 > best.len() && best.len() > 1 {    //stop condition was met, path is taken is longer than best path
         return 
     }
 
@@ -90,8 +89,7 @@ fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_pa
 
     if field.end == 1 {  //it came to an end
             path.push((field.position.clone(), path.last().unwrap().1));
-            *best = path;         // p1 = path;
-            //  println!("{:?}", best);
+            *best = path;
             return 
     }
     drop(best);
@@ -106,11 +104,9 @@ fn traverse_maze(maze: Vec<Vec<Field>>,mut path: Vec<([i8; 2], i32)>,mut best_pa
         keys -= 1;
     }
 
-    if !path.contains(&(field.position, keys)) {         // da li sam vec bio tu
+    if !path.contains(&(field.position, keys)) {  //if the position is already visited with the same number of keys
         path.push((field.position.clone(), keys.clone()));
-        // println!("Usao si u if za proveru da li si vec bio tu")
-    } else if path.len() == 1 {
-        // println!("Usao si u if za proveru da li si tek poceo")
+    } else if path.len() == 1 { //if it is the first position
     } else {
         return 
     } 
